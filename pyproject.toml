@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "src"
+version = "0.1.0"
+description = ""
+authors = ["leffw <93302536+leffw@users.noreply.github.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+fastapi = "^0.100.0"
+requests = "^2.31.0"
+python-dotenv = "0.21.0"
+uvicorn = "^0.22.0"
+cachetools = "^5.3.1"
+psycopg2-binary = "^2.9.6"
+peewee = "^3.16.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "src.app:start"
