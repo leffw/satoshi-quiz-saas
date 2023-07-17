@@ -75,7 +75,6 @@ def lnurlw_execute(user_id: str, k1: str = None, pr: str = None):
             "reason": "Invoice is invalid."
         }, status_code=400)
     
-    print(decode_invoice)
     invoice_amount = decode_invoice["num_satoshis"]
     if invoice_amount != reward.value:
         return JSONResponse({
