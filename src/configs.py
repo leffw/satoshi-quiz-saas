@@ -31,6 +31,9 @@ class DatabaseConfig:
         else:
             return None
 
+# MemberStack configuration
+MEMBER_STACK_API_KEY = getenv("MEMBER_STACK_API_KEY")
+
 # Hygraph configuration
 HYGRAPH_URL = getenv("HYGRAPH_URL")
 

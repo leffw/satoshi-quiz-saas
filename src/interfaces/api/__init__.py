@@ -1,12 +1,14 @@
 from fastapi.middleware.cors import CORSMiddleware
+from src.services.memberstack import memberstack
 from src.services.hygraph import hygraph
 from src.services.lndhub import lndhub
 from src.interfaces.api import schemas
 from fastapi.responses import JSONResponse
 from src.configs import API_HOST, API_PORT, API_DNS
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from src.lib import lnurl
 from base64 import b64decode
+from uuid import uuid4
 from src import database
 
 import logging
@@ -103,59 +105,70 @@ def lnurlw_execute(user_id: str, k1: str = None, pr: str = None):
         return JSONResponse({"status": "OK"})
 
 @api.post("/api/v1/reward/{classroom}")
-def reward(classroom: str, data: schemas.QuizSchema, request: Request):
-    email = request.headers.get("X-EMAIL")
-    if not email or email == "null":
-        raise HTTPException(400, "Invalid email address.")
-    
-    user_id = database.User.get_or_create(email=email)[0].id
-    reward = database.Reward.select(database.Reward.id).where(
-        (database.Reward.user == user_id) & 
-        (database.Reward.classroom == classroom))
-    if reward.exists():
-        reward = reward.get().id
-        lnurlw = lnurl.lnurl_encode(f"{API_DNS}/withdraw/api/v1/lnurl/{user_id}/{reward}")
-        return JSONResponse({ "lnurl": lnurlw })
-    
-    try:
-        answers = b64decode(data.answers).decode("utf-8")
-    except:
-        answers = b64decode(data.answers).decode("latin-1")
-    
-    answers = list(set(answers.split("&")))
-    quizzes = hygraph.call(r'''
-        {
-          quizzes(where: {classroom: "%s"}){
-            correctAnswer
-          }
-        }
-    ''' % (classroom))["quizzes"]
-    points = len(list(
-        filter(lambda data: data["correctAnswer"] \
-            in answers, quizzes)))
-    
-    if not points:
-        raise HTTPException(204, "You didn't make any points.")
-    
-    quizzes_count = len(quizzes)
-    quizzes_reward = float(hygraph.call(r'''
-        {
-            classrooms(where: {classroom: "%s"}) {
-                reward
+def reward(classroom: str, data: schemas.QuizSchema, request: Request, background_tasks: BackgroundTasks):
+    user_id = request.headers.get("X-USER-ID")
+    if not user_id or user_id == "null":
+        raise HTTPException(401, "Invalid User-Id address.")
+
+    def create_reward(user_id: str, reward_id: str):
+        try:
+            answers = b64decode(data.answers).decode("utf-8")
+        except:
+            answers = b64decode(data.answers).decode("latin-1")
+        
+        answers = list(set(answers.split("&")))
+        quizzes_and_classroom = hygraph.call(r'''
+            {
+                quizzes(where: {classroom: "%s"}) {
+                    correctAnswer
+                }
+                
+                classrooms(where: {classroom: "%s"}) {
+                    reward
+                }
             }
-        }
-    ''' % (classroom))["classrooms"][0]["reward"])
-    porcentagem_prize = points / quizzes_count * 100
+        ''' % (classroom, classroom))
+        points = len(list(
+            filter(lambda data: data["correctAnswer"] \
+                in answers, quizzes_and_classroom["quizzes"])))
+        
+        if not points:
+            return logging.error(f"{user_id} has no required points")
+        
+        quizzes_count = len(quizzes_and_classroom["quizzes"])
+        quizzes_reward = float(quizzes_and_classroom["classrooms"][0]["reward"])
+        porcentagem_prize = points / quizzes_count * 100
+        value = (quizzes_reward * porcentagem_prize / 100)
+
+        user = memberstack.get_member(user_id)
+        if not user.get("member"):
+            return logging.error(f"{user_id} not found.")
+
+        database.User.get_or_create(
+            id=user_id, 
+            email=user["member"]["email"]
+        )
+        
+        reward = database.Reward.select(database.Reward.id).where(
+            (database.Reward.user == user_id) & 
+            (database.Reward.classroom == classroom))
+        if not reward.exists():
+            database.Reward.create(
+                id=reward_id,
+                user=user_id,
+                value=value,
+                status="created",
+                classroom=classroom
+            )
+        
+    reward_id = uuid4()
+    background_tasks.add_task(
+        func=create_reward, 
+        user_id=user_id, 
+        reward_id=reward_id
+    )
     
-    value = (quizzes_reward * porcentagem_prize / 100)
-    reward = database.Reward.get_or_create(
-        user=user_id,
-        value=value,
-        status="created",
-        classroom=classroom
-    )[0].id
-    
-    lnurlw = lnurl.lnurl_encode(f"{API_DNS}/withdraw/api/v1/lnurl/{user_id}/{reward}")
+    lnurlw = lnurl.lnurl_encode(f"{API_DNS}/withdraw/api/v1/lnurl/{user_id}/{reward_id}")
     return JSONResponse({ "lnurl": lnurlw })
 
 def start():
