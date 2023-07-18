@@ -149,24 +149,26 @@ def reward(classroom: str, data: schemas.QuizSchema, request: Request, backgroun
             email=user["member"]["email"]
         )
         
-        reward = database.Reward.select(database.Reward.id).where(
-            (database.Reward.user == user_id) & 
-            (database.Reward.classroom == classroom))
-        if not reward.exists():
-            database.Reward.create(
-                id=reward_id,
-                user=user_id,
-                value=value,
-                status="created",
-                classroom=classroom
-            )
-        
+        database.Reward.create(
+            id=reward_id,
+            user=user_id,
+            value=value,
+            status="created",
+            classroom=classroom
+        )
+
     reward_id = uuid4()
-    background_tasks.add_task(
-        func=create_reward, 
-        user_id=user_id, 
-        reward_id=reward_id
-    )
+    reward = database.Reward.select(database.Reward.id).where(
+                (database.Reward.user == user_id) & 
+                (database.Reward.classroom == classroom))
+    if not reward.exists():    
+        background_tasks.add_task(
+            func=create_reward, 
+            user_id=user_id, 
+            reward_id=reward_id
+        )
+    else:
+        reward_id = reward.get().id
     
     lnurlw = lnurl.lnurl_encode(f"{API_DNS}/withdraw/api/v1/lnurl/{user_id}/{reward_id}")
     return JSONResponse({ "lnurl": lnurlw })
