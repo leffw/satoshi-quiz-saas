@@ -30,7 +30,7 @@ LNDHUB_PASSWORD = "f5faf044b2cc25d2"  # The password for the Lndhub service.
 ```
 
 ### Configuration Hygraph
-Para começar crie uma conta no serviço hygraph.com e crie um shema em (Schema) com os titulos nos seguintes models `classroom` and `quiz`
+To get started create an account on the hygraph.com service and create a shema in (Schema) with the titles in the following models `classroom` and `quiz`
 
 ### Classroom
 ![Image](./assets/hygraph-schema-classrom.png)
