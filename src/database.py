@@ -6,11 +6,8 @@ from peewee import (
     FloatField, 
     Model, 
     TextField, 
-    BooleanField, 
     DateTimeField, 
     ForeignKeyField, 
-    DecimalField, 
-    UUIDField
 )
 from uuid import uuid4
 
@@ -96,12 +93,73 @@ class User(BaseModel):
         self.updated_at = datetime.now()
         return super().save(*args, **kwargs)
 
+class Lndhub(BaseModel):
+    id = TextField(unique=True, primary_key=True, default=uuid4)
+    user = ForeignKeyField(User)
+    url = TextField()
+    username = TextField()
+    password = TextField()
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    def save(self, *args, **kwargs):
+        """
+        Save the User model instance with updated timestamps.
+        """
+        self.updated_at = datetime.now()
+        return super().save(*args, **kwargs)
+
+class Quiz(BaseModel):
+    id = TextField(unique=True, primary_key=True, default=uuid4)
+    user = ForeignKeyField(User)
+    topic = TextField()
+    prize = FloatField(default=0)
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    def save(self, *args, **kwargs):
+        """
+        Save the Quiz model instance with updated timestamps.
+        """
+        self.updated_at = datetime.now()
+        return super().save(*args, **kwargs)
+
+class Quizzes(BaseModel):
+    id = TextField(unique=True, primary_key=True, default=uuid4)
+    quiz = ForeignKeyField(Quiz)
+    question = TextField()
+    options = TextField()
+    answer = TextField()
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    def save(self, *args, **kwargs):
+        """
+        Save the Quizzes model instance with updated timestamps.
+        """
+        self.updated_at = datetime.now()
+        return super().save(*args, **kwargs)
+
+class MemberStack(BaseModel):
+    id = TextField(unique=True, primary_key=True, default=uuid4)
+    user = ForeignKeyField(User)
+    key = TextField()
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    def save(self, *args, **kwargs):
+        """
+        Save the Quizzes model instance with updated timestamps.
+        """
+        self.updated_at = datetime.now()
+        return super().save(*args, **kwargs)
+
 class Reward(BaseModel):
     id = TextField(unique=True, primary_key=True, default=uuid4)
+    quiz = ForeignKeyField(Quiz)
     user = ForeignKeyField(User)
     value = FloatField(default=0)
     status = TextField(choices=["created", "pending", "settled"])
-    classroom = TextField(null=True)
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
 
@@ -117,4 +175,5 @@ def create_tables():
     """
     Create tables in the database.
     """
-    database.create_tables([User, Reward], safe=True)
+    database.create_tables([
+        User, Lndhub, MemberStack, Quiz, Quizzes, Reward], safe=True)
