@@ -43,12 +43,6 @@ FIREBASE_UNIVERSE_DOMAIN = getenv("FIREBASE_UNIVERSE_DOMAIN", "googleapis.com")
 FIREBASE_CLIENT_X509_CERT_URL = getenv("FIREBASE_CLIENT_X509_CERT_URL", "https://www.googleapis.com/oauth2/v1/certs")
 FIREBASE_AUTH_PROVIDER_X509_CERT_URL = getenv("FIREBASE_AUTH_PROVIDER_X509_CERT_URL")
 
-# MemberStack configuration
-MEMBER_STACK_API_KEY = getenv("MEMBER_STACK_API_KEY")
-
-# Hygraph configuration
-HYGRAPH_URL = getenv("HYGRAPH_URL")
-
 # Lndhub configuration
 LNDHUB_URL = getenv("LNDHUB_URL")
 LNDHUB_USERNAME = getenv("LNDHUB_USERNAME")
