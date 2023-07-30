@@ -1,5 +1,5 @@
 from src.interfaces.api.middlewares.authentication import isAuthentication
-from src.interfaces.api.routes import setup, quiz, reward
+from src.interfaces.api.routes import setup, quiz, reward, wallet
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from src.configs import API_HOST, API_PORT
@@ -24,6 +24,7 @@ api.add_middleware(
 api.include_router(reward.router)
 api.include_router(setup.router)
 api.include_router(quiz.router)
+api.include_router(wallet.router)
 
 @api.get("/health/liveness")
 async def health_liveness():
