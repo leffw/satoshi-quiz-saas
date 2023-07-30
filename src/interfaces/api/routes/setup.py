@@ -25,6 +25,7 @@ def lndhub(data: LndhubSchema, request: Request):
     """
     user_id = request.data["id"]
     try:
+        data.url = data.url.replace("/", "")
         lndhub = LndHub(url=data.url, username=data.username, password=data.password)
         lndhub.get_balance()["BTC"]["AvailableBalance"]
         lndhub = database.Lndhub.select().where(
