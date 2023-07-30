@@ -23,22 +23,25 @@ def create_quiz(data: QuizSchema, request: Request):
     Raises:
         HTTPException: If the quiz creation fails or there is a server error.
     """
-    user_id = request.data["id"]
-    quiz_id = str(database.Quiz.get_or_create(
-        user=user_id,
-        topic=data.topic,
-        prize=data.prize
-    )[0].id)
-    
-    database.Quizzes.insert_many([{
-        "quiz": quiz_id,
-        "question": quiz.question, 
-        "options": "|".join(quiz.options),
-        "answer": quiz.answer,
-        } for quiz in data.quizzes
-    ]).execute()
-    
-    return JSONResponse({ "id":  quiz_id }, status_code=201)
+    try:
+        user_id = request.data["id"]
+        quiz_id = str(database.Quiz.get_or_create(
+            user=user_id,
+            topic=data.topic,
+            prize=data.prize
+        )[0].id)
+        
+        database.Quizzes.insert_many([{
+            "quiz": quiz_id,
+            "question": quiz.question, 
+            "options": "|".join(quiz.options),
+            "answer": quiz.answer,
+            } for quiz in data.quizzes
+        ]).execute()
+        return JSONResponse({ "id":  quiz_id }, status_code=201)
+    except Exception as error:
+        logging.error(str(error), exc_info=True)
+        raise HTTPException(500, "Unable to create Quiz.")
 
 @router.delete("/api/v1/quiz/{id}")
 def delete_quiz(id: str, request: Request):
@@ -83,26 +86,30 @@ def get_quiz_by_id(id: str):
     Raises:
         HTTPException: If the quiz with the given id doesn't exist.
     """    
-    quizzes = []
-    for quiz in (database.Quizzes
-             .select()
-             .where((database.Quizzes.quiz == id))):
-        quiz = model_to_dict(quiz)
-        quiz["created_at"] = quiz["created_at"].timestamp()
-        quiz["updated_at"] = quiz["updated_at"].timestamp()
-        del quiz["quiz"]
-        quizzes.append(quiz)
+    try:
+        quizzes = []
+        for quiz in (database.Quizzes
+                .select()
+                .where((database.Quizzes.quiz == id))):
+            quiz = model_to_dict(quiz)
+            quiz["created_at"] = quiz["created_at"].timestamp()
+            quiz["updated_at"] = quiz["updated_at"].timestamp()
+            del quiz["quiz"]
+            quizzes.append(quiz)
 
-    quiz = database.Quiz.select().where(
-        (database.Quiz.id == id)).get()
-    return { 
-        "id": id, 
-        "topic": quiz.topic, 
-        "prize": quiz.prize, 
-        "quizzes": quizzes, 
-        "created_at": quiz.created_at.timestamp(),
-        "updated_at": quiz.updated_at.timestamp() 
-    }
+        quiz = database.Quiz.select().where(
+            (database.Quiz.id == id)).get()
+        return { 
+            "id": id, 
+            "topic": quiz.topic, 
+            "prize": quiz.prize, 
+            "quizzes": quizzes, 
+            "created_at": quiz.created_at.timestamp(),
+            "updated_at": quiz.updated_at.timestamp() 
+        }
+    except Exception as error:
+        logging.error(str(error), exc_info=True)
+        raise HTTPException(204)
 
 @router.get("/api/v1/quizzes")
 def get_list_quizzes(page: int = 1, size: int = 5, request: Request = Request):
@@ -124,17 +131,21 @@ def get_list_quizzes(page: int = 1, size: int = 5, request: Request = Request):
     if size > 5:
         raise HTTPException(400, "Size is too large.")
 
-    quizzes = []
-    for quiz in (database.Quiz
-             .select()
-             .where((database.Quiz.user == user_id))
-             .order_by(database.Quiz.created_at.desc())
-             .limit(size)
-             .paginate(page, size)):
-        quiz = model_to_dict(quiz)
-        quiz["created_at"] = quiz["created_at"].timestamp()
-        quiz["updated_at"] = quiz["updated_at"].timestamp()
-        del quiz["user"]
-        quizzes.append(quiz)
+    try:
+        quizzes = []
+        for quiz in (database.Quiz
+                .select()
+                .where((database.Quiz.user == user_id))
+                .order_by(database.Quiz.created_at.desc())
+                .limit(size)
+                .paginate(page, size)):
+            quiz = model_to_dict(quiz)
+            quiz["created_at"] = quiz["created_at"].timestamp()
+            quiz["updated_at"] = quiz["updated_at"].timestamp()
+            del quiz["user"]
+            quizzes.append(quiz)
 
-    return quizzes
+        return quizzes
+    except Exception as error:
+        logging.error(str(error), exc_info=True)
+        raise HTTPException(204)

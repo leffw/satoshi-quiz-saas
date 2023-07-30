@@ -27,27 +27,26 @@ def lndhub(data: LndhubSchema, request: Request):
     try:
         lndhub = LndHub(url=data.url, username=data.username, password=data.password)
         lndhub.get_balance()["BTC"]["AvailableBalance"]
+        lndhub = database.Lndhub.select().where(
+            (database.Lndhub.user == user_id))
+        if not lndhub.exists():
+            database.Lndhub.create(
+                user=user_id,
+                url=data.url,
+                username=data.username,
+                password=data.password
+            )
+        else:
+            lndhub = lndhub.get()
+            lndhub.url = data.url
+            lndhub.username = data.username
+            lndhub.password = data.password
+            lndhub.save()
+        
+        return JSONResponse({ "message": "Lndhub has been successfully created." })
     except Exception as error:
         logging.error(str(error), exc_info=True)
         raise HTTPException(400, "This Lndhub is invalid.")
-
-    lndhub = database.Lndhub.select().where(
-        (database.Lndhub.user == user_id))
-    if not lndhub.exists():
-        database.Lndhub.create(
-            user=user_id,
-            url=data.url,
-            username=data.username,
-            password=data.password
-        )
-    else:
-        lndhub = lndhub.get()
-        lndhub.url = data.url
-        lndhub.username = data.username
-        lndhub.password = data.password
-        lndhub.save()
-    
-    return JSONResponse({ "message": "Lndhub has been successfully created." })
 
 @router.post("/api/v1/setup/memberstack")
 def memberstack(data: MemberStackSchema, request: Request):
@@ -69,7 +68,7 @@ def memberstack(data: MemberStackSchema, request: Request):
     if database.MemberStack.select(database.MemberStack.user).where(
         (database.MemberStack.user == user_id)).exists():
         raise HTTPException(204)
-
+    
     database.MemberStack.create(user=user_id, key=data.key)
     return JSONResponse(
         {"message": "MemberStack has been successfully created." }, status_code=201)
