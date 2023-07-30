@@ -26,7 +26,6 @@ def lnurl_withdraw(user: str, id: str):
     """
     reward = database.Reward.select(database.Reward.value).where(
             (database.Reward.id == id) &
-            (database.Reward.user == user) &
             (database.Reward.status == "created"))
     if not reward.exists():
         return JSONResponse({"status": "ERROR", "reason": "No reward found."})
@@ -126,9 +125,7 @@ def create_reward(id: str, data: QuizAnswer):
         quiz_user = quiz.user
         quiz_prize = quiz.prize
 
-    reward = database.Reward.select().where(
-            (database.Reward.quiz == id) & 
-            (database.Reward.user == data.user))
+    reward = database.Reward.select().where((database.Reward.quiz == id))
     if reward.exists():
         reward = reward.get()
         if reward.status != "created":
@@ -164,10 +161,5 @@ def create_reward(id: str, data: QuizAnswer):
 
     value = (quiz_prize * (total_points / total_answer * 100) / 100)    
     lnurl = f"{API_EXTERNAL}/api/v1/lnurl/withdraw/{data.user}/"
-    lnurl+= str(database.Reward.get_or_create(
-        quiz=id,
-        user=data.user,
-        value=value,
-        status="created"
-    )[0].id)
+    lnurl+= str(database.Reward.get_or_create(quiz=id, value=value, status="created")[0].id)
     return JSONResponse({ "lnurl": lnurl_encode(lnurl) })

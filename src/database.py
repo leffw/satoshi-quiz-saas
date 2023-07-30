@@ -157,7 +157,6 @@ class MemberStack(BaseModel):
 class Reward(BaseModel):
     id = TextField(unique=True, primary_key=True, default=uuid4)
     quiz = ForeignKeyField(Quiz)
-    user = ForeignKeyField(User)
     value = FloatField(default=0)
     status = TextField(choices=["created", "pending", "settled"])
     created_at = DateTimeField(default=datetime.now)
