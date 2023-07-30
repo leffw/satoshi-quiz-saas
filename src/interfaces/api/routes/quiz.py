@@ -69,7 +69,7 @@ def delete_quiz(id: str, request: Request):
         logging.error(str(error), exc_info=True)
         raise HTTPException(500, "It was not possible to delete the quiz.")
 
-@router.get("/api/v1/q/{id}")
+@router.get("/api/v1/public/quiz/{id}")
 def get_quiz_by_id(id: str):
     """
     Get a quiz by its id.
@@ -93,7 +93,16 @@ def get_quiz_by_id(id: str):
         del quiz["quiz"]
         quizzes.append(quiz)
 
-    return quizzes
+    quiz = database.Quiz.select().where(
+        (database.Quiz.id == id)).get()
+    return { 
+        "id": id, 
+        "topic": quiz.topic, 
+        "prize": quiz.prize, 
+        "quizzes": quizzes, 
+        "created_at": quiz.created_at.timestamp(),
+        "updated_at": quiz.updated_at.timestamp() 
+    }
 
 @router.get("/api/v1/quizzes")
 def get_list_quizzes(page: int = 1, size: int = 5, request: Request = Request):

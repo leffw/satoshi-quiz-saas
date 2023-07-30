@@ -11,7 +11,7 @@ def isAuthentication(request: Request):
     if "/api/v1/reward/" in request.url.path:
         return request
     
-    if "/api/v1/q/" in request.url.path:
+    if "/api/v1/public" in request.url.path:
         return request
 
     if request.url.path in [
