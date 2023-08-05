@@ -1,5 +1,6 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from typing import List, Optional
+from uuid import uuid4
 
 class MemberStackSchema(BaseModel):
     key: str
@@ -23,3 +24,10 @@ class QuizSchema(BaseModel):
 class QuizAnswer(BaseModel):
     user: Optional[str]
     answers: str
+    
+    @validator("user")
+    def validator_user(cls, user: str):
+        if not user or str(user) == "null":
+            return str(uuid4())
+        else:
+            return user

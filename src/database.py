@@ -13,6 +13,8 @@ from uuid import uuid4
 
 import logging
 
+from src.migration import AutoMigration
+
 class CustomPostgresqlDatabase(PostgresqlDatabase):
     configs = DatabaseConfig
 
@@ -158,6 +160,7 @@ class Reward(BaseModel):
     id = TextField(unique=True, primary_key=True, default=uuid4)
     quiz = ForeignKeyField(Quiz)
     value = FloatField(default=0)
+    user = TextField(null=True)
     status = TextField(choices=["created", "pending", "settled"])
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
@@ -174,5 +177,10 @@ def create_tables():
     """
     Create tables in the database.
     """
+    try:
+        AutoMigration(database=database, db_type=DatabaseConfig().DB_TYPE).execute()
+    except Exception as error:
+        logging.error(str(error))
+
     database.create_tables([
         User, Lndhub, MemberStack, Quiz, Quizzes, Reward], safe=True)

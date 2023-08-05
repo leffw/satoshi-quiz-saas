@@ -125,12 +125,15 @@ def create_reward(id: str, data: QuizAnswer):
         quiz_user = quiz.user
         quiz_prize = quiz.prize
 
-    reward = database.Reward.select().where((database.Reward.quiz == id))
+    reward = database.Reward.select().where(
+        (database.Reward.quiz == id) & 
+        (database.Reward.user == data.user)
+    )
     if reward.exists():
         reward = reward.get()
         if reward.status != "created":
             raise HTTPException(204)
-        
+
         return JSONResponse({ "lnurl": lnurl_encode(
             f"{API_EXTERNAL}/api/v1/lnurl/withdraw/{data.user}/{reward.id}") })
 
@@ -161,5 +164,5 @@ def create_reward(id: str, data: QuizAnswer):
 
     value = (quiz_prize * (total_points / total_answer * 100) / 100)    
     lnurl = f"{API_EXTERNAL}/api/v1/lnurl/withdraw/{data.user}/"
-    lnurl+= str(database.Reward.get_or_create(quiz=id, value=value, status="created")[0].id)
+    lnurl+= str(database.Reward.get_or_create(quiz=id, user=data.user, value=value, status="created")[0].id)
     return JSONResponse({ "lnurl": lnurl_encode(lnurl) })
