@@ -23,7 +23,7 @@ class QuizSchema(BaseModel):
 
 class QuizAnswer(BaseModel):
     user: Optional[str]
-    answers: str
+    points: int
     
     @validator("user")
     def validator_user(cls, user: str):

@@ -137,23 +137,8 @@ def create_reward(id: str, data: QuizAnswer):
         return JSONResponse({ "lnurl": lnurl_encode(
             f"{API_EXTERNAL}/api/v1/lnurl/withdraw/{data.user}/{reward.id}") })
 
-    try:
-        answers = b64decode(data.answers).decode("utf-8")
-    except:
-        answers = b64decode(data.answers).decode("latin-1")
-
-    answers = list(set(answers.split("&")))
-    total_answer = 0
-    total_points = 0
-    for answer in (database.Quizzes
-             .select(database.Quizzes.answer)
-             .where((database.Quizzes.quiz == id))):
-        total_answer += 1
-        if answer.answer in answers:
-            total_points += 1
-
-    if not total_points:
-        raise HTTPException(204)
+    total_answer = database.Quizzes.select().where(
+        (database.Quizzes.quiz == id)).count()
     
     member_key = database.MemberStack.select(database.MemberStack.key).where(
         (database.MemberStack.user == quiz_user))
@@ -162,7 +147,10 @@ def create_reward(id: str, data: QuizAnswer):
         if not memberstack.get_member(data.user).get("member"):
             raise HTTPException(204)
 
-    value = (quiz_prize * (total_points / total_answer * 100) / 100)    
+    value = (quiz_prize * (data.points / total_answer * 100) / 100)    
+    if data.points > total_answer:
+        raise HTTPException(204)
+
     lnurl = f"{API_EXTERNAL}/api/v1/lnurl/withdraw/{data.user}/"
     lnurl+= str(database.Reward.get_or_create(quiz=id, user=data.user, value=value, status="created")[0].id)
     return JSONResponse({ "lnurl": lnurl_encode(lnurl) })
